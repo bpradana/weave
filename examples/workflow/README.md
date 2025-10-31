@@ -22,72 +22,90 @@ go run .
 ```mermaid
 flowchart TB
     %% Root configuration
-    config[load-workflow-config]
+    subgraph Root
+        config[load-workflow-config]
+    end
 
     %% Ingestion
-    ingest{{Ingestion graph}}
-    loadCatalog[load-source-catalog]
-    fetchOverrides[fetch-manual-overrides]
-    fetchSchedule[fetch-schedule]
-    merge[merge-schedule-with-overrides]
-    normalize[normalize-sources]
-    validateIngest[validate-ingestion]
-    ingestSummary[ingestion-summary]
+    subgraph Ingestion
+        ingest{{Ingestion graph}}
+        loadCatalog[load-source-catalog]
+        fetchOverrides[fetch-manual-overrides]
+        fetchSchedule[fetch-schedule]
+        merge[merge-schedule-with-overrides]
+        normalize[normalize-sources]
+        validateIngest[validate-ingestion]
+        ingestSummary[ingestion-summary]
+    end
 
     %% Curation
-    curate{{Curation graph}}
-    loadCollections[load-collections]
-    pickFeatured[pick-featured-candidates]
-    tagEnrichment[tag-enrichment]
-    validateCuration[validate-curation]
-    curateSummary[curation-summary]
+    subgraph Curation
+        curate{{Curation graph}}
+        loadCollections[load-collections]
+        pickFeatured[pick-featured-candidates]
+        tagEnrichment[tag-enrichment]
+        validateCuration[validate-curation]
+        curateSummary[curation-summary]
+    end
 
     %% Processing
-    process{{Processing graph}}
-    loadProcConfig[load-processing-config]
-    planBatches[plan-batches]
-    video{{video-pipeline}}
-    article{{article-pipeline}}
-    image{{image-pipeline}}
-    videoBundle[video-bundle]
-    articleSummary[summarise-articles]
-    imagePublish[publish-image-bundle]
-    qaChecks[run-quality-checks]
-    processSummary[processing-summary]
+    subgraph Processing
+        process{{Processing graph}}
+        loadProcConfig[load-processing-config]
+        planBatches[plan-batches]
+        video{{video-pipeline}}
+        article{{article-pipeline}}
+        image{{image-pipeline}}
+        videoBundle[video-bundle]
+        articleSummary[summarise-articles]
+        imagePublish[publish-image-bundle]
+        qaChecks[run-quality-checks]
+        processSummary[processing-summary]
+    end
 
     %% Quality
-    quality[quality-stage]
-    coverage[coverage-metrics]
-    ingestWarn[ingestion-warnings]
-    scanFailures[scan-failures]
-    qualitySummary[quality-summary]
+    subgraph Quality
+        quality[quality-stage]
+        coverage[coverage-metrics]
+        ingestWarn[ingestion-warnings]
+        scanFailures[scan-failures]
+        qualitySummary[quality-summary]
+    end
 
     %% Distribution
-    distribution{{Distribution graph}}
-    loadPlan[load-distribution-plan]
-    prewarm[prewarm-cdn]
-    regional{{regional-rollout}}
-    rollUSEast[rollout-us-east]
-    rollEUWest[rollout-eu-west]
-    rollAPSouth[rollout-ap-south]
-    distSummary[distribution-summary]
+    subgraph Distribution
+        distribution{{Distribution graph}}
+        loadPlan[load-distribution-plan]
+        prewarm[prewarm-cdn]
+        regional{{regional-rollout}}
+        rollUSEast[rollout-us-east]
+        rollEUWest[rollout-eu-west]
+        rollAPSouth[rollout-ap-south]
+        distSummary[distribution-summary]
+    end
 
     %% Monitoring
-    monitor{{Monitoring graph}}
-    collectMetrics[collect-metrics]
-    updateDashboards[update-dashboards]
-    incidentReview[incident-review]
-    monitorSummary[monitoring-summary]
+    subgraph Monitoring
+        monitor{{Monitoring graph}}
+        collectMetrics[collect-metrics]
+        updateDashboards[update-dashboards]
+        incidentReview[incident-review]
+        monitorSummary[monitoring-summary]
+    end
 
     %% Analytics
-    analytics[analytics-stage]
-    aggregate[aggregate-metrics]
-    derive[derive-highlights]
-    risk[risk-assessment]
-    analyticsSummary[analytics-summary]
+    subgraph Analytics
+        analytics[analytics-stage]
+        aggregate[aggregate-metrics]
+        derive[derive-highlights]
+        risk[risk-assessment]
+        analyticsSummary[analytics-summary]
+    end
 
     %% Summary
-    summary[prepare-summary]
+    subgraph Summary
+        summary[prepare-summary]
+    end
 
     %% Edges
     config --> ingest
