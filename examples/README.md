@@ -8,12 +8,4 @@ This directory contains self-contained programs that demonstrate different featu
 - `visualize` – exports the graph in Graphviz DOT format for documentation.
 - `analytics` – orchestrates a richer DAG with custom structs, hooks, and worker pools.
 - `operations` – realistic operations report with anomaly handling, hooks, metrics, and bounded concurrency.
-
-```mermaid
-flowchart LR
-    basic([basic]) --> hooks([hooks])
-    basic --> workerpool([workerpool])
-    basic --> visualize([visualize])
-    basic --> analytics([analytics])
-    analytics --> operations([operations])
-```
+- `workflow` – deeply nested content workflow demonstrating reusable subgraphs and multi-stage orchestration.

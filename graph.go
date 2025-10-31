@@ -107,6 +107,12 @@ var (
 	ErrNilRun = errors.New("weave: task run function must not be nil")
 	// ErrForeignDependency signals a dependency from a different graph was supplied.
 	ErrForeignDependency = errors.New("weave: dependency belongs to another graph")
+	// ErrNilSubgraph indicates a nil subgraph was supplied to AddGraphTask.
+	ErrNilSubgraph = errors.New("weave: subgraph must not be nil")
+	// ErrNilGraphTaskResult indicates a nil result mapper was supplied to AddGraphTask.
+	ErrNilGraphTaskResult = errors.New("weave: graph task result func must not be nil")
+	// ErrRecursiveGraphTask indicates the graph was asked to embed itself as a task.
+	ErrRecursiveGraphTask = errors.New("weave: cannot embed graph within itself")
 )
 
 // AddTask registers a new task within the graph with the provided name, implementation, and options.
@@ -131,6 +137,61 @@ func AddTask[T any](g *Graph, name string, run TaskFunc[T], opts ...TaskOption) 
 		return nil, err
 	}
 	return &Handle[T]{key: key}, nil
+}
+
+// GraphTaskResultFunc converts the outcome of running a subgraph into the parent task's result.
+type GraphTaskResultFunc[T any] func(context.Context, *Results, ExecutionMetrics, error) (T, error)
+
+// GraphTaskOption configures a graph task wrapper.
+type GraphTaskOption func(*graphTaskConfig)
+
+type graphTaskConfig struct {
+	taskOpts     []TaskOption
+	executorOpts []ExecutorOption
+}
+
+// WithGraphTaskOptions appends regular task options (e.g. dependencies or hooks) to the embedded task.
+func WithGraphTaskOptions(opts ...TaskOption) GraphTaskOption {
+	return func(cfg *graphTaskConfig) {
+		cfg.taskOpts = append(cfg.taskOpts, opts...)
+	}
+}
+
+// WithGraphTaskExecutorOptions forwards executor options to the embedded graph when it runs.
+func WithGraphTaskExecutorOptions(opts ...ExecutorOption) GraphTaskOption {
+	return func(cfg *graphTaskConfig) {
+		cfg.executorOpts = append(cfg.executorOpts, opts...)
+	}
+}
+
+// AddGraphTask wraps a fully-defined graph as a task within another graph so it can be composed or reused.
+// The subgraph executes with the provided context when this task runs, and the result mapper translates its
+// output into the parent task's typed result.
+func AddGraphTask[T any](parent *Graph, name string, subgraph *Graph, result GraphTaskResultFunc[T], opts ...GraphTaskOption) (*Handle[T], error) {
+	if parent == nil {
+		return nil, errors.New("weave: nil parent graph")
+	}
+	if subgraph == nil {
+		return nil, ErrNilSubgraph
+	}
+	if parent == subgraph {
+		return nil, ErrRecursiveGraphTask
+	}
+	if result == nil {
+		return nil, ErrNilGraphTaskResult
+	}
+
+	cfg := graphTaskConfig{}
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
+	run := func(ctx context.Context, deps DependencyResolver) (T, error) {
+		results, metrics, err := subgraph.Run(ctx, cfg.executorOpts...)
+		return result(ctx, results, metrics, err)
+	}
+
+	return AddTask(parent, name, run, cfg.taskOpts...)
 }
 
 func (g *Graph) addNode(name string, run runFunc, cfg taskConfig) (taskKey, error) {

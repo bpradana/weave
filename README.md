@@ -104,6 +104,28 @@ results, metrics, err := exec.Await()
 
 Implement the `Dispatcher` interface to integrate with existing goroutine pools, job queues, or distributed executors.
 
+## Composing graphs
+
+Reuse an existing graph as an embedded task inside another graph with `AddGraphTask`. The subgraph runs with the same root context, and you can translate its results into any typed value:
+
+```go
+ordersGraph := weave.NewGraph()
+ordersTask, _ := weave.AddTask(ordersGraph, "orders", fetchOrders)
+
+reportGraph := weave.NewGraph()
+ordersHandle, _ := weave.AddGraphTask(reportGraph, "orders-subgraph", ordersGraph,
+	func(ctx context.Context, res *weave.Results, metrics weave.ExecutionMetrics, err error) ([]Order, error) {
+		if err != nil {
+			return nil, err
+		}
+		return ordersTask.Value(res)
+	},
+	weave.WithGraphTaskExecutorOptions(weave.WithErrorStrategy(weave.ContinueOnError)),
+)
+```
+
+The wrapper task accepts regular `TaskOption`s through `weave.WithGraphTaskOptions` so you can declare dependencies or hooks just like any other node.
+
 ## Graph visualisation
 
 Use `Graph.ExportDOT` to generate Graphviz DOT output for diagrams or tooling:
